@@ -1,0 +1,16 @@
+.git
+.idea
+.venv
+.env
+backup
+data
+env
+nginx
+.dockerignore
+.gitignore
+docker-compose.build.yml
+docker-compose.dev.yml
+docker-compose.yml
+Dockerfile
+LICENSE
+README.md
