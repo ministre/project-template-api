@@ -84,7 +84,7 @@ services:
       - project-template
       - traefik
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
+      test: ["CMD", "nc", "-z", "localhost", "8000"]
       interval: 10s
       retries: 3
       start_period: 5s
