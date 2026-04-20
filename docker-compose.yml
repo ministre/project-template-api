@@ -85,9 +85,9 @@ services:
       - traefik
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/_allauth/browser/v1/config')" ]
-      interval: 60s
-      retries: 5
-      start_period: 20s
+      interval: 10s
+      retries: 3
+      start_period: 5s
       timeout: 10s
     restart: unless-stopped
     labels:
