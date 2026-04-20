@@ -1,0 +1,15 @@
+name: project-template-api-dev
+
+services:
+  db:
+    container_name: project-template-api-dev-db
+    image: postgres:18.3-alpine
+    volumes:
+      - ./data-dev/postgres:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    restart: unless-stopped

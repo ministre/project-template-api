@@ -1,0 +1,106 @@
+name: project-template-api
+
+services:
+  db:
+    container_name: project-template-api-db
+    image: postgres:18.3-alpine
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
+    expose:
+      - 5432
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - project-template
+      - pgadmin
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+    restart: unless-stopped
+
+  nginx:
+    container_name: project-template-api-nginx
+    image: nginx:1.29.8-alpine
+    environment:
+      - HOST=project-template-api-nginx
+    volumes:
+      - ./nginx:/etc/nginx/templates
+      - ./data/static:/var/www/static:ro
+      - ./data/media:/var/www/media:ro
+    networks:
+      - traefik
+    expose:
+      - 80
+    healthcheck:
+      test: curl --fail -s http://localhost/health || exit 1
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.project-template-api-nginx.rule=Host(`${DOMAIN}`) && (PathPrefix(`/static/`) || PathPrefix(`/media/`))
+      - traefik.http.routers.project-template-api-nginx.tls.certresolver=letsEncrypt
+      - traefik.http.services.project-template-api-nginx.loadbalancer.server.port=80
+
+  api:
+    container_name: project-template-api
+    image: ministre/project-template-api:latest
+    entrypoint: "/app/docker-entrypoint.sh"
+    command: [ 'daphne', '-b', '0.0.0.0', '-p', '8000', 'project_template.asgi:application' ]
+    environment:
+      DEBUG: ${DEBUG}
+      SECRET_KEY: ${SECRET_KEY}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      HEADLESS_JWT_PRIVATE_KEY: ${HEADLESS_JWT_PRIVATE_KEY}
+      KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+    volumes:
+      - ./data/static:/app/src/static
+      - ./data/media:/app/src/media
+    expose:
+      - 8000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - project-template
+      - traefik
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000')" ]
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.project-template-api.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.project-template-api.tls.certresolver=letsEncrypt
+      - traefik.http.services.project-template-api.loadbalancer.server.port=8000
+
+networks:
+  project-template:
+    external: true
+  traefik:
+    external: true
+  pgadmin:
+    external: true
