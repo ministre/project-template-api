@@ -84,11 +84,11 @@ services:
       - project-template
       - traefik
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/_allauth/browser/v1/config')" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
       interval: 10s
       retries: 3
       start_period: 5s
-      timeout: 10s
+      timeout: 2s
     restart: unless-stopped
     labels:
       - traefik.enable=true
