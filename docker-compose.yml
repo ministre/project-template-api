@@ -94,7 +94,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik
-      - traefik.http.routers.project-template-api.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.project-template-api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api/`)
       - traefik.http.routers.project-template-api.tls.certresolver=letsEncrypt
       - traefik.http.services.project-template-api.loadbalancer.server.port=8000
 
